@@ -1,26 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Create a single supabase client for interacting with your database
+const collection = process.env.REACT_APP_SUPABASE_APP;
 const supabase = createClient(
-  'https://hrcnrbctpyfjrwceiczn.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyY25yYmN0cHlmanJ3Y2VpY3puIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU2ODc2MzcsImV4cCI6MjAzMTI2MzYzN30.SGcQgZCgud131vxhb21IgG5vrG8dkB3ZMwzj9wGDrlc',
+  process.env.REACT_APP_SUPABASE_URL,
+  process.env.REACT_APP_SUPABASE_KEY,
 );
 
-const collection = 'akadmy_f564cd44-580b-48cc-ae8c-d3e1cd6f6bfa';
-
-// const supabase = createClient(
-//   'https://cxuisrdpbmdklehplxgh.supabase.co',
-//   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4dWlzcmRwYm1ka2xlaHBseGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjA5MzIxNzQsImV4cCI6MjAzNjUwODE3NH0.bJto4-XVgipqy349b-YQ8JW8H02tcl6hrQQdyDIPYNA',
-// );
-
-//const collection = 'akadmydev_525af3fa-68f4-4f1e-a75d-f91338b1b6c1';
-// const collection = 'akadmystg_df2983fa-27e7-4917-87d7-72cd81101c04';
-// const collection = 'akadmypro_fd20cd9f-110a-4092-b544-f27e2058ab62';
-
 let channel = undefined;
+let notifyEvent = () => {};
 
 const fetch = async (setMessages, conversation_id, page = 0, perpage = 10) => {
-  console.log(`GET - ${page}`);
   const start = page * perpage;
   const end = start + 10;
   const { data, error } = await supabase
@@ -45,7 +34,13 @@ const subscribe = (setMessages, conversation_id) => {
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: collection },
-      () => fetch(setMessages, conversation_id),
+      (payload) => {
+        if (payload.new) {
+          notifyEvent(payload.new);
+          if (payload.new.conversation_id === conversation_id)
+            fetch(setMessages, conversation_id);
+        }
+      },
     )
     .subscribe((payload) => {
       if (payload === 'SUBSCRIBED') {
@@ -64,4 +59,8 @@ const send = async (content) => {
   await supabase.from(collection).insert({ ...content });
 };
 
-export { subscribe, unsubscribe, send, fetch };
+const watch = async (watcher) => {
+  notifyEvent = watcher;
+};
+
+export { subscribe, unsubscribe, send, fetch, watch };
