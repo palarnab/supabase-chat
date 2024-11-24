@@ -3,11 +3,13 @@ import Message from './Message';
 import SendMessage from './SendMessage';
 import Error from './Error';
 import useGetMessages from './useGetMessages';
+import useGetActivity from './useGetActivity';
 import { Box } from '@mui/material';
 
 const ChatBox = ({
   sender,
   receiver,
+  observeUserIds,
   containerHeight,
   showUserAvatar,
   bgSender,
@@ -20,6 +22,8 @@ const ChatBox = ({
     sender.id,
     receiver.id,
   );
+
+  const { activity } = useGetActivity(sender.id, observeUserIds);
 
   const observer = useRef();
   const lastChatElementRef = useCallback(
@@ -34,6 +38,10 @@ const ChatBox = ({
     },
     [hasMore],
   );
+
+  useEffect(() => {
+    console.log(activity);
+  }, [activity]);
 
   useEffect(() => {
     setTimeout(() => {
