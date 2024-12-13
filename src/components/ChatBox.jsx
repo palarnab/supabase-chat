@@ -3,7 +3,6 @@ import Message from './Message';
 import SendMessage from './SendMessage';
 import Error from './Error';
 import useGetMessages from './useGetMessages';
-import useGetActivity from './useGetActivity';
 import { Box } from '@mui/material';
 
 const ChatBox = ({
@@ -17,13 +16,12 @@ const ChatBox = ({
 }) => {
   const [page, setPage] = useState(0);
   const scroll = useRef();
-  const { messages, hasMore, initialized } = useGetMessages(
+  const { activity, messages, hasMore, initialized } = useGetMessages(
     page,
     sender.id,
-    receiver.id,
+    receiver ? receiver.id : null,
+    observeUserIds,
   );
-
-  const { activity } = useGetActivity(sender.id, observeUserIds);
 
   const observer = useRef();
   const lastChatElementRef = useCallback(
@@ -56,21 +54,10 @@ const ChatBox = ({
     }
   }, []);
 
-  if (
-    !(
-      sender &&
-      sender.id &&
-      sender.name &&
-      receiver &&
-      receiver.id &&
-      receiver.name
-    )
-  ) {
+  if (!(sender && sender.id && sender.name)) {
     return (
       <Error
-        error={`Sender: ${JSON.stringify(
-          sender || {},
-        )} OR Receiver: ${JSON.stringify(receiver || {})} is not complete`}
+        error={`Sender: ${JSON.stringify(sender || {})} is not complete`}
       />
     );
   }
